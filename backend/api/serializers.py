@@ -1,9 +1,7 @@
+from api.fields import Base64ImageField
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
-from rest_framework import serializers
-
 from djoser.serializers import UserCreateSerializer, UserSerializer
-
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -12,9 +10,8 @@ from recipes.models import (
     ShoppingCart,
     Tag,
 )
+from rest_framework import serializers
 from users.models import Subscribe, User
-
-from api.fields import Base64ImageField
 
 
 class UserReadSerializer(UserSerializer):
@@ -139,8 +136,9 @@ class SubscribeAuthorSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         return (self.context.get('request').user.is_authenticated
-                and Subscribe.objects.filter(user=self.context['request'].user,
-                                             author=obj).exists()
+                and Subscribe.objects.filter(
+                    user=self.context['request'].user,
+                    author=obj).exists()
                 )
 
     def get_recipes_count(self, obj):
@@ -252,23 +250,24 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    @transaction.atomic
     def tags_and_ingredients_set(self, recipe, tags, ingredients):
         recipe.tags.set(tags)
-        RecipeIngredient.objects.bulk_create([
-            RecipeIngredient(
-                recipe=recipe,
-                ingredient_id=ingredient['id'],
-                amount=ingredient['amount']
-            ) for ingredient in ingredients
-        ])
+        RecipeIngredient.objects.bulk_create(
+            [
+                RecipeIngredient(
+                    recipe=recipe,
+                    ingredient_id=ingredient['id'],
+                    amount=ingredient['amount']
+                ) for ingredient in ingredients
+            ])
 
     @transaction.atomic
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(author=self.context['request'].user,
-                                       **validated_data)
+        recipe = Recipe.objects.create(
+            author=self.context['request'].user,
+            **validated_data)
         self.tags_and_ingredients_set(recipe, tags, ingredients)
         return recipe
 
@@ -277,10 +276,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        RecipeIngredient.objects.filter(
-            recipe=instance,
-            ingredient__in=instance.ingredients.all()
-        ).delete()
+
+        instance.ingredients.clear()
+
         self.tags_and_ingredients_set(instance, tags, ingredients)
         return instance
 
