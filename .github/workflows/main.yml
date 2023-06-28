@@ -91,14 +91,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-      - name: Make certbot directory
-        uses: garygrossgarten/github-action-ssh@release
+      - name: Create certbot directories on server
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          command: |
+          script: |
             mkdir -p ~/food/data/certbot/conf
             mkdir -p ~/food/data/certbot/www
       - name: Copy docker-compose.yml via ssh
