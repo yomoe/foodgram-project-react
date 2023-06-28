@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import Favorite, Ingredient, Recipe, Tag
+from recipes.models import RecipeIngredient, ShoppingCart
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -10,6 +11,7 @@ from rest_framework.response import Response
 from users.models import Subscribe, User
 
 from .filters import RecipeFilter
+from .mixins import ListRetrieveViewSet
 from .pagination import CustomPaginator
 from .permissions import IsAuthorOrAdminOrReadOnly
 from .serializers import (
@@ -24,14 +26,6 @@ from .serializers import (
     UserCreateSerializer,
     UserReadSerializer,
 )
-
-
-class ListRetrieveViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet
-):
-    pass
 
 
 class UserViewSet(mixins.CreateModelMixin, ListRetrieveViewSet):
@@ -167,7 +161,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, id=pk)
         return self.toggle_favorite_or_cart(
-            request, recipe, RecipeSerializer, request.user.shopping_cart)
+            request, recipe, RecipeSerializer, ShoppingCart.objects)
 
 
 @action(
@@ -176,13 +170,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes=(IsAuthenticated,),
 )
 def download_shopping_cart(self, request):
-    user = request.user
-    ingredients = user.shopping_cart.values_list(
-        'ingredients__name', 'ingredients__measurement_unit').annotate(
-        total_amount=Sum('recipe_ingredients__amount'))
-    wishlist = [
-        f'{item[0]} - {item[2]} {item[1]}' for item in ingredients
-    ]
+    ingredients = (
+        RecipeIngredient.objects
+        .filter(recipe__shopping_recipe__user=request.user)
+        .values('ingredient')
+        .annotate(total_amount=Sum('amount'))
+        .values_list(
+            'ingredient__name',
+            'total_amount',
+            'ingredient__measurement_unit',
+        )
+    )
+
+    wishlist = []
+    for item in ingredients:
+        wishlist.append(
+            f'{item[0]} - {item[2]} {item[1]}'
+        )
+
     wishlist = '\n'.join(wishlist)
     response = HttpResponse(wishlist, 'Content-Type: text/plain')
     response['Content-Disposition'] = 'attachment; filename="wishlist.txt"'

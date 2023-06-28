@@ -212,11 +212,16 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Tag.objects.all())
+    tags = serializers.ListField(
+        child=serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all()),
+        write_only=True
+    )
     author = UserReadSerializer(read_only=True)
     id = serializers.ReadOnlyField()
-    ingredients = RecipeIngredientCreateSerializer(many=True)
+    ingredients = serializers.ListField(
+        child=RecipeIngredientCreateSerializer(),
+        write_only=True
+    )
     image = Base64ImageField()
 
     class Meta:
@@ -273,13 +278,22 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+        tags_data = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
+
         instance = super().update(instance, validated_data)
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
+
+        instance.tags.clear()
+        instance.tags.add(*tags_data)
 
         instance.ingredients.clear()
+        for ingredient_data in ingredients_data:
+            RecipeIngredient.objects.update_or_create(
+                recipe=instance,
+                ingredient_id=ingredient_data['id'],
+                defaults={'amount': ingredient_data['amount']}
+            )
 
-        self.tags_and_ingredients_set(instance, tags, ingredients)
         return instance
 
     def to_representation(self, instance):

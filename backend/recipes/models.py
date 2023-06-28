@@ -5,26 +5,26 @@ from users.models import User
 
 
 class Ingredient(models.Model):
-    name = models.CharField(
-        'Название ингредиента', max_length=200
-    )
-    measurement_unit = models.CharField(
-        'Единица измерения', max_length=200
-    )
+    name = models.CharField('Название ингредиента', max_length=200)
+    measurement_unit = models.CharField('Единица измерения', max_length=200)
 
     class Meta:
         ordering = ('name',)
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_ingredient'
+            )
+        ]
 
     def __str__(self):
         return self.name
 
 
 class Tag(models.Model):
-    name = models.CharField(
-        'Название тега', max_length=50
-    )
+    name = models.CharField('Название тега', max_length=50, unique=True)
     color = models.CharField(
         'Цвет в HEX',
         max_length=7,
@@ -35,9 +35,7 @@ class Tag(models.Model):
                 message='Поле должно содержать HEX-код выбранного цвета.'
             )
         ]
-
     )
-
     slug = models.SlugField(
         'Слаг тега', max_length=200, unique=True
     )

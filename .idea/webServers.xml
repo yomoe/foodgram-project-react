@@ -2,7 +2,7 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="d1b4be7b-e33f-42b1-ac9b-88dfffd57bae" name="YAP">
+      <webServer id="d1b4be7b-e33f-42b1-ac9b-88dfffd57bae" name="YAP" url="https://i.zifir.io">
         <fileTransfer rootFolder="/home/yc-user" accessType="SFTP" host="51.250.104.84" port="22" sshConfigId="131fc3a4-d78d-4dfd-8263-757b417c9190" sshConfig="YAP" keyPair="true">
           <advancedOptions>
             <advancedOptions controlEncoding="utf-8" dataProtectionLevel="Private" keepAliveTimeout="60000" passiveMode="true" shareSSLContext="true" />
