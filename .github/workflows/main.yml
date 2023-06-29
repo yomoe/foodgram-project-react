@@ -104,8 +104,8 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
-          passphrase: ${{ secrets.SSH_KEY }}
-          key: ${{ secrets.SSH_PASSPHRASE }}
+          privateKey: ${{ secrets.SSH_KEY }}
+          password: ${{ secrets.SSH_PASSPHRASE }}
           local: docs
           remote: food
       - name: Copy docker-compose.yml via ssh
