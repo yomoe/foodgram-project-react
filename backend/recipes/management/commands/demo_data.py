@@ -56,8 +56,8 @@ class Command(BaseCommand):
                         'first_name': fake.first_name_male(),
                         'last_name': fake.last_name_male(),
                         'password': 'pbkdf2_sha256$260000$t13KitcM5u0eaQ5NWmp'
-                                    'dUp$LnS++CiN6LTv01nVFxgAcqkcLCBsn6M8Q'
-                                    'NOXHviIzOE=',
+                                    'dUp$LnS++CiN6LTv01nVFxgAcqkcLCBsn6M8QNOX'
+                                    'HviIzOE=',
                     },
                 )
                 for j in range(2):
