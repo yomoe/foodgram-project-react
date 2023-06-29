@@ -15,6 +15,7 @@ from users.models import Subscribe, User
 
 
 class UserReadSerializer(UserSerializer):
+    """[GET] Cписок пользователей."""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -31,6 +32,7 @@ class UserReadSerializer(UserSerializer):
 
 
 class UserCreateSerializer(UserCreateSerializer):
+    """[POST] Создание нового пользователя."""
     password = serializers.CharField(
         style={
             'input_type': 'password'
@@ -44,6 +46,7 @@ class UserCreateSerializer(UserCreateSerializer):
 
 
 class SetPasswordSerializer(serializers.Serializer):
+    """[POST] Изменение пароля пользователя."""
     new_password = serializers.CharField(write_only=True)
     current_password = serializers.CharField(write_only=True)
 
@@ -73,6 +76,7 @@ class SetPasswordSerializer(serializers.Serializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
+    """Список рецептов без ингридиентов."""
     image = image = Base64ImageField(
         required=False,
         allow_null=True
@@ -86,6 +90,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionsSerializer(serializers.ModelSerializer):
+    """[GET] Список авторов на которых подписан пользователь."""
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
@@ -116,6 +121,7 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
 
 
 class SubscribeAuthorSerializer(serializers.ModelSerializer):
+    """[POST, DELETE] Подписка на автора и отписка."""
     email = serializers.ReadOnlyField(source='author.email')
     id = serializers.ReadOnlyField(source='author.id')
     username = serializers.ReadOnlyField(source='author.username')
@@ -146,18 +152,23 @@ class SubscribeAuthorSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """[GET] Список ингредиентов."""
+
     class Meta:
         model = Ingredient
         fields = '__all__'
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """[GET] Список тегов."""
+
     class Meta:
         model = Tag
         fields = '__all__'
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    """Список ингредиентов с количеством для рецепта."""
     id = serializers.ReadOnlyField(
         source='ingredient.id')
     name = serializers.ReadOnlyField(
@@ -171,6 +182,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
+    """[GET] Список рецептов."""
     tags = TagSerializer(many=True, read_only=True)
     author = UserReadSerializer(read_only=True)
     ingredients = RecipeIngredientSerializer(
@@ -204,6 +216,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
+    """Ингредиент и количество для создания рецепта."""
     id = serializers.IntegerField()
 
     class Meta:
@@ -212,6 +225,7 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
+    """[POST, PATCH, DELETE] Создание, изменение и удаление рецепта."""
     tags = serializers.ListField(
         child=serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all()),
         write_only=True
@@ -226,8 +240,16 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'ingredients', 'tags',
-                  'image', 'name', 'text', 'cooking_time', 'author')
+        fields = (
+            'id',
+            'ingredients',
+            'tags',
+            'image',
+            'name',
+            'text',
+            'cooking_time',
+            'author'
+        )
         extra_kwargs = {
             'ingredients': {'required': True, 'allow_blank': False},
             'tags': {'required': True, 'allow_blank': False},

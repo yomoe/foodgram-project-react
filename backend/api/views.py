@@ -8,7 +8,6 @@ from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST
 from users.models import Subscribe, User
 
 from .filters import RecipeFilter
@@ -164,72 +163,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return self.toggle_favorite_or_cart(
             request, recipe, RecipeSerializer, ShoppingCart.objects)
 
-def create_shoping_list(user: "MyUser") -> str:
-    """Сфомировать список ингридкетов для покупки.
+    @action(
+        detail=False, methods=['get'],
+        permission_classes=(IsAuthenticated,))
+    def download_shopping_cart(self, request):
+        ingredients = (
+            RecipeIngredient.objects
+            .filter(recipe__shopping_recipe__user=request.user)
+            .values('ingredient')
+            .annotate(total_amount=Sum('amount'))
+            .values_list(
+                'ingredient__name', 'total_amount',
+                'ingredient__measurement_unit')
+        )
 
-    Args:
-        user (MyUser):
-            Пользователь, для которго будет создаваться список.
+        wishlist = []
+        for item in ingredients:
+            wishlist.append(
+                f'{item[0]} - {item[2]} {item[1]}'
+            )
 
-    Returns:
-        str:
-            Список продуктов с указанием необходимого количества.
-    """
-    shopping_list = [
-        f"Список покупок для:\n\n{user.first_name}\n"
-        f"{dt.now().strftime(DATE_TIME_FORMAT)}\n"
-    ]
-    Ingredient = apps.get_model("recipes", "Ingredient")
-    ingredients = (
-        Ingredient.objects.filter(recipe__recipe__in_carts__user=user)
-        .values("name", measurement=F("measurement_unit"))
-        .annotate(amount=Sum("recipe__amount"))
-    )
-    ing_list = (
-        f'{ing["name"]}: {ing["amount"]} {ing["measurement"]}'
-        for ing in ingredients
-    )
-    shopping_list.extend(ing_list)
-
-    shopping_list.append("\nПосчитано в Foodgram")
-    return "\n".join(shopping_list)
-
-@action(
-    detail=False,
-    methods=['get'],
-)
-def download_shopping_cart(self, request):
-    user = self.request.user
-    if not user.carts.exists():
-        return Response(status=HTTP_400_BAD_REQUEST)
-
-    filename = f"{user.username}_shopping_list.txt"
-    shopping_list = create_shoping_list(user)
-    response = HttpResponse(
-        shopping_list, content_type="text.txt; charset=utf-8"
-    )
-    response["Content-Disposition"] = f"attachment; filename={filename}"
-    return response
-
-    # ingredients = (
-    #     RecipeIngredient.objects
-    #     .filter(recipe__shopping_recipe__user=request.user)
-    #     .values('ingredient')
-    #     .annotate(total_amount=Sum('amount'))
-    #     .values_list(
-    #         'ingredient__name',
-    #         'total_amount',
-    #         'ingredient__measurement_unit',
-    #     )
-    # )
-    #
-    # wishlist = []
-    # for item in ingredients:
-    #     wishlist.append(
-    #         f'{item[0]} - {item[2]} {item[1]}'
-    #     )
-    #
-    # wishlist = '\n'.join(wishlist)
-    # response = HttpResponse(wishlist, 'Content-Type: text/plain')
-    # response['Content-Disposition'] = 'attachment; filename="wishlist.txt"'
-    # return response
+        wishlist = '\n'.join(wishlist)
+        response = HttpResponse(wishlist, 'Content-Type: text/plain')
+        response['Content-Disposition'] = 'attachment; filename="wishlist.txt"'
+        return response
