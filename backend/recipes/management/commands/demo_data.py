@@ -4,12 +4,14 @@ import random
 from itertools import cycle
 
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django.core.files.images import ImageFile
 from django.core.management.base import BaseCommand
 from faker import Faker
 from recipes.models import Ingredient, Tag
 from recipes.models import Recipe
 from recipes.models import RecipeIngredient
+from rest_framework.authtoken.models import Token
 from users.models import User
 
 fake = Faker(['ru_RU', ])
@@ -55,11 +57,10 @@ class Command(BaseCommand):
                         'username': f'User{i}',
                         'first_name': fake.first_name_male(),
                         'last_name': fake.last_name_male(),
-                        'password': 'pbkdf2_sha256$260000$t13KitcM5u0eaQ5NWmp'
-                                    'dUp$LnS++CiN6LTv01nVFxgAcqkcLCBsn6M8QNOX'
-                                    'HviIzOE=',
+                        'password': make_password('p@ssw0rd1'),
                     },
                 )
+                token, created = Token.objects.update_or_create(user=user)
                 for j in range(2):
                     ingredients = [random.choice(all_ingredients) for _ in
                                    range(4)]
